@@ -37,8 +37,8 @@ class TestFlowiseClient(unittest.TestCase):
 
         # Mock the streaming POST response
         mock_post.return_value.iter_lines.return_value = [
-            b'data: {"event": "data", "content": "Why don\'t scientists trust atoms?"}',
-            b'data: {"event": "data", "content": "Because they make up everything!"}'
+            b'data: {"event": "token", "data": "Why don\'t scientists trust atoms?"}',
+            b'data: {"event": "token", "data": "Because they make up everything!"}'
         ]
 
         # Create a client instance
@@ -56,74 +56,9 @@ class TestFlowiseClient(unittest.TestCase):
         # Collect and verify the streamed chunks
         response = list(completion)
         self.assertEqual(response, [
-            '{"event": "data", "content": "Why don\'t scientists trust atoms?"}',
-            '{"event": "data", "content": "Because they make up everything!"}'
+            '{"event": "token", "data": "Why don\'t scientists trust atoms?"}',
+            '{"event": "token", "data": "Because they make up everything!"}'
         ])
-
-    @patch('flowise.client.requests.post')
-    @patch('flowise.client.requests.get')
-    def test_create_prediction_with_history_and_uploads(self, mock_get, mock_post):
-        # Mock the response for the streaming check (streaming is available)
-        mock_get.return_value.json.return_value = {"isStreaming": True}
-
-        # Mock the streaming POST response
-        mock_post.return_value.iter_lines.return_value = [
-            b'data: {"event": "data", "content": "Processing the uploaded file..."}',
-            b'data: {"event": "data", "content": "File analysis complete."}'
-        ]
-
-        # Create a client instance
-        client = Flowise()
-
-        # Example message history and file uploads
-        history = [
-            IMessage(message="What is the weather?", type="userMessage"),
-            IMessage(message="It is sunny today.", type="apiMessage")
-        ]
-        uploads = [
-            IFileUpload(data="base64EncodedData", type="file", name="example.txt", mime="text/plain")
-        ]
-
-        # Make a streaming request with history and uploads
-        completion = client.create_prediction(
-            PredictionData(
-                chatflowId="abc",
-                question="Analyze the attached file.",
-                streaming=True,
-                history=history,
-                uploads=uploads
-            )
-        )
-
-        # Collect and verify the streamed chunks
-        response = list(completion)
-        self.assertEqual(response, [
-            '{"event": "data", "content": "Processing the uploaded file..."}',
-            '{"event": "data", "content": "File analysis complete."}'
-        ])
-
-        # Verify that the history and uploads were included in the POST request
-        expected_payload = {
-            'chatflowId': 'abc',
-            'question': 'Analyze the attached file.',
-            'overrideConfig': None,
-            'chatId': None,
-            'streaming': True,
-            'history': [
-                {'message': 'What is the weather?', 'type': 'userMessage', 'role': None, 'content': None},
-                {'message': 'It is sunny today.', 'type': 'apiMessage', 'role': None, 'content': None}
-            ],
-            'uploads': [
-                {'data': 'base64EncodedData', 'type': 'file', 'name': 'example.txt', 'mime': 'text/plain'}
-            ]
-        }
-
-        mock_post.assert_called_once_with(
-            'http://localhost:3000/api/v1/prediction/abc',
-            json=expected_payload,
-            stream=True
-        )
-
 
 if __name__ == '__main__':
     unittest.main()

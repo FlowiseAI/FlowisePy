@@ -7,7 +7,7 @@ with open(os.path.join(os.path.dirname(__file__), 'README.md'), 'r', encoding='u
 
 setup(
     name="flowise",
-    version="1.0.2",
+    version="1.0.4",
     description="Flowise SDK for Python to interact with the Flowise API.",
     long_description=long_description,  # Use README.md as the long description
     long_description_content_type='text/markdown',  # This specifies the format

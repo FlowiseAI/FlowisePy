@@ -1,11 +1,6 @@
 import requests
 from typing import List, Dict, Optional, Generator
 
-class FlowiseClientOptions:
-    def __init__(self, base_url: Optional[str] = None):
-        self.base_url = base_url or 'http://localhost:3000'
-
-
 class IFileUpload:
     def __init__(self, data: Optional[str], type: str, name: str, mime: str):
         self.data = data
@@ -43,8 +38,15 @@ class PredictionData:
 
 
 class Flowise:
-    def __init__(self, options: FlowiseClientOptions = FlowiseClientOptions()):
-        self.base_url = options.base_url
+    def __init__(self, base_url: Optional[str] = None, api_key: Optional[str] = None):
+        self.base_url = base_url or 'http://localhost:3000'
+        self.api_key = api_key or ''
+
+    def _get_headers(self) -> Dict[str, str]:
+        headers = {}
+        if self.api_key:
+            headers['Authorization'] = f'Bearer {self.api_key}'
+        return headers
 
     def create_prediction(self, data: PredictionData) -> Generator[str, None, None]:
         # Step 1: Check if chatflow is available for streaming
@@ -59,7 +61,6 @@ class Flowise:
 
         # Step 2: Handle streaming prediction
         if is_streaming_available and data.streaming:
-            headers = {'Content-Type': 'application/json'}
             prediction_payload = {
                 'chatflowId': data.chatflowId,
                 'question': data.question,
@@ -70,9 +71,8 @@ class Flowise:
                 'uploads': [upload.__dict__ for upload in (data.uploads or [])]
             }
 
-            with requests.post(prediction_url, json=prediction_payload, stream=True) as r:
+            with requests.post(prediction_url, json=prediction_payload, stream=True, headers=self._get_headers()) as r:
                 r.raise_for_status()
-                buffer = ''
                 for line in r.iter_lines():
                     if line:
                         line_str = line.decode('utf-8')
@@ -91,9 +91,6 @@ class Flowise:
                 'uploads': [upload.__dict__ for upload in (data.uploads or [])]
             }
 
-            response = requests.post(prediction_url, json=prediction_payload)
+            response = requests.post(prediction_url, json=prediction_payload, headers=self._get_headers())
             response.raise_for_status()
             yield response.json()
-
-
-
