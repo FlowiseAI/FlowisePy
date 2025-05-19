@@ -36,10 +36,13 @@ class TestFlowiseClient(unittest.TestCase):
         mock_get.return_value.json.return_value = {"isStreaming": True}
 
         # Mock the streaming POST response
-        mock_post.return_value.iter_lines.return_value = [
+        mock_response = MagicMock()
+        mock_response.__enter__.return_value.iter_lines.return_value = [
             b'data: {"event": "token", "data": "Why don\'t scientists trust atoms?"}',
             b'data: {"event": "token", "data": "Because they make up everything!"}'
         ]
+        mock_response.__enter__.return_value.raise_for_status.return_value = None
+        mock_post.return_value = mock_response
 
         # Create a client instance
         client = Flowise()

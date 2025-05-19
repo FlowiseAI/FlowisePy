@@ -38,9 +38,10 @@ class PredictionData:
 
 
 class Flowise:
-    def __init__(self, base_url: Optional[str] = None, api_key: Optional[str] = None):
+    def __init__(self, base_url: Optional[str] = None, api_key: Optional[str] = None, timeout: Optional[int] = None):
         self.base_url = base_url or 'http://localhost:3000'
         self.api_key = api_key or ''
+        self.timeout = timeout
 
     def _get_headers(self) -> Dict[str, str]:
         headers = {}
@@ -71,7 +72,7 @@ class Flowise:
                 'uploads': [upload.__dict__ for upload in (data.uploads or [])]
             }
 
-            with requests.post(prediction_url, json=prediction_payload, stream=True, headers=self._get_headers()) as r:
+            with requests.post(prediction_url, json=prediction_payload, stream=True, headers=self._get_headers(), timeout=self.timeout) as r:
                 r.raise_for_status()
                 for line in r.iter_lines():
                     if line:
@@ -91,6 +92,6 @@ class Flowise:
                 'uploads': [upload.__dict__ for upload in (data.uploads or [])]
             }
 
-            response = requests.post(prediction_url, json=prediction_payload, headers=self._get_headers())
+            response = requests.post(prediction_url, json=prediction_payload, headers=self._get_headers(), timeout=self.timeout)
             response.raise_for_status()
             yield response.json()
